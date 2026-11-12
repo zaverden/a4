@@ -97,6 +97,14 @@
     .grid-message { color: var(--muted); font-size: 13px; line-height: 1.5; }
     .grid-message:not(:empty) { margin-top: 14px; }
     .print-hint { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .pdf-print-frame {
+      position: fixed;
+      top: 0;
+      left: -10000px;
+      width: 210mm;
+      height: 297mm;
+      border: 0;
+    }
     .preview { width: 100%; max-width: 500px; margin-inline: auto; }
     figcaption { color: var(--muted); font-size: 13px; }
     .preview-tools { margin-bottom: 10px; }
@@ -212,6 +220,7 @@
           <button class="secondary" id="reset-settings" type="button">Сбросить настройки</button>
         </div>
         <p class="print-hint">Для печати векторного PDF выберите A4 и масштаб 100%.</p>
+        <p class="print-hint" id="print-fallback" hidden>Если диалог печати не открылся, <a id="open-print-pdf" target="_blank" rel="noopener">откройте PDF в новой вкладке</a> и напечатайте его там.</p>
       </form>
     </section>
 
@@ -251,6 +260,8 @@
     const gridMessage = document.getElementById('grid-message');
     const printButton = document.getElementById('print');
     const downloadPdfButton = document.getElementById('download-pdf');
+    const printFallback = document.getElementById('print-fallback');
+    const openPrintPdf = document.getElementById('open-print-pdf');
     const zoom = document.getElementById('zoom');
     const zoomValue = document.getElementById('zoom-value');
     const paperWindow = document.getElementById('paper-window');
@@ -258,6 +269,8 @@
     const savedControls = [layout, horizontal, vertical, spacingInput, thicknessInput,
       lineTone, marginXInput, marginYInput, zoom];
     let previewDrag = null;
+    let printFrame = null;
+    let printPdfUrl = null;
 
     function readMeasurement(input) {
       const value = Number.isFinite(input.valueAsNumber) ? input.valueAsNumber : Number(input.defaultValue);
@@ -424,6 +437,7 @@
 
     settings.addEventListener('submit', event => event.preventDefault());
     settings.addEventListener('input', () => {
+      printFallback.hidden = true;
       render();
       saveSettings();
     });
@@ -435,6 +449,7 @@
       }
     });
     document.getElementById('reset-settings').addEventListener('click', () => {
+      printFallback.hidden = true;
       settings.reset();
       zoom.value = zoom.defaultValue;
       renderZoom();
@@ -474,8 +489,38 @@
       paperWindow.classList.remove('is-panning');
     });
     printButton.addEventListener('click', () => {
-      render();
-      window.print();
+      const drawing = render();
+      if (!drawing) return;
+
+      printFrame?.remove();
+      printFrame = null;
+      if (printPdfUrl) URL.revokeObjectURL(printPdfUrl);
+      printPdfUrl = URL.createObjectURL(createPdf(drawing));
+      openPrintPdf.href = printPdfUrl;
+      printFallback.hidden = false;
+      if (navigator.pdfViewerEnabled === false) return;
+
+      const frame = document.createElement('iframe');
+      frame.className = 'pdf-print-frame';
+      frame.title = 'Векторный PDF для печати';
+      frame.tabIndex = -1;
+      frame.setAttribute('aria-hidden', 'true');
+      frame.addEventListener('load', () => {
+        // Give the built-in PDF viewer time to initialize after the frame loads.
+        setTimeout(() => {
+          if (frame !== printFrame) return;
+          try {
+            frame.focus();
+            frame.contentWindow.print();
+          } catch {
+            // The link stays available if the browser blocks printing from the frame.
+            printButton.focus();
+          }
+        }, 1000);
+      }, { once: true });
+      frame.src = printPdfUrl;
+      printFrame = frame;
+      document.body.append(frame);
     });
     downloadPdfButton.addEventListener('click', () => {
       const drawing = render();
