@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Разлиновка A4</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #22293a;
+      background: #f2f4f8;
+      --accent: #354eb2;
+      --muted: #525d72;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    h1, p, figure { margin: 0; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+      align-items: start;
+      gap: clamp(28px, 5vw, 72px);
+      max-width: 1100px;
+      margin: auto;
+      padding: 16px clamp(16px, 5vw, 64px);
+    }
+
+    h1 { margin-bottom: 12px; font-size: 26px; letter-spacing: -.035em; }
+
+    .settings {
+      padding: 16px;
+      border: 1px solid #dce1ea;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    fieldset + fieldset { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e3e7ef; }
+    .group-title { margin-bottom: 5px; font-size: 14px; font-weight: 700; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; font-size: 14px; }
+    .row + .row { margin-top: 4px; }
+    .line-directions { display: flex; flex-wrap: wrap; gap: 0 12px; margin-bottom: 4px; }
+    .check { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 14px; }
+    input { accent-color: var(--accent); }
+    input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
+    .measurement { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
+    input[type="number"] {
+      width: 72px;
+      height: 30px;
+      padding: 5px 7px;
+      border: 1px solid #c7cfdf;
+      border-radius: 7px;
+      color: inherit;
+      font: inherit;
+    }
+    select {
+      padding: 6px 8px;
+      border: 1px solid #c7cfdf;
+      border-radius: 7px;
+      background: #fff;
+      color: inherit;
+      font: inherit;
+    }
+
+    output { color: var(--muted); font-variant-numeric: tabular-nums; }
+    input[type="range"] { display: block; width: 100%; margin: 0; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    button {
+      flex: 1 0 auto;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { background: #293f99; }
+    button:disabled { opacity: .6; cursor: default; }
+    button.secondary { background: #edf0f9; color: var(--accent); }
+    button.secondary:hover { background: #e1e7f7; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .grid-message { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .grid-message:not(:empty) { margin-top: 14px; }
+    .print-hint { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .preview { width: 100%; max-width: 500px; margin-inline: auto; }
+    figcaption { color: var(--muted); font-size: 13px; }
+    .preview-tools { margin-bottom: 10px; }
+    .paper { display: block; width: 100%; height: auto; margin-inline: auto; background: #fff; box-shadow: 0 3px 12px #26375c22; }
+
+    @media screen {
+      .paper-window { --paper-width: 100%; }
+      .paper-window .paper { width: calc(var(--paper-width) * var(--preview-scale, 1)); }
+      .paper-window.is-zoomed {
+        max-height: 75vh;
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+      .paper-window.is-zoomed .paper { box-shadow: none; cursor: grab; user-select: none; }
+      .paper-window.is-zoomed.is-panning,
+      .paper-window.is-zoomed.is-panning .paper { cursor: grabbing; }
+    }
+
+    @media screen and (min-width: 671px) {
+      .workspace {
+        height: 100vh;
+        height: 100dvh;
+        grid-template-rows: minmax(0, 1fr);
+      }
+      .controls { max-height: 100%; overflow: auto; }
+      .preview { display: flex; flex-direction: column; height: 100%; }
+      .paper-window {
+        flex: 1;
+        min-height: 0;
+        container-type: size;
+        --paper-width: min(100%, calc(max(0px, 100vh - 108px) * 210 / 297));
+      }
+      .paper-window.is-zoomed { max-height: none; }
+      @supports (height: 1cqh) {
+        .paper-window { --paper-width: min(100%, calc(100cqh * 210 / 297)); }
+      }
+    }
+
+    @media screen and (max-width: 670px) {
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .controls { width: 100%; max-width: 500px; margin-inline: auto; }
+    }
+
+    @page { size: A4 portrait; margin: 0; }
+
+    @media print {
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .controls, figcaption, .preview-tools { display: none; }
+      .workspace, .preview { display: block; max-width: none; width: auto; margin: 0; padding: 0; }
+      .paper { width: 210mm; height: 297mm; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <section class="controls" aria-labelledby="title">
+      <h1 id="title">Разлиновка A4</h1>
+      <form class="settings" id="settings">
+        <fieldset aria-label="Шаблон листа">
+          <label class="row" for="layout">
+            Шаблон
+            <select id="layout">
+              <option value="1" selected>1 на страницу</option>
+              <option value="2">2 на страницу</option>
+              <option value="4">4 на страницу</option>
+            </select>
+          </label>
+        </fieldset>
+        <fieldset aria-labelledby="line-options">
+          <p class="group-title" id="line-options">Линии</p>
+          <div class="line-directions">
+            <label class="check"><input id="horizontal" type="checkbox" checked> Горизонтальные</label>
+            <label class="check"><input id="vertical" type="checkbox" checked> Вертикальные</label>
+          </div>
+          <label class="row" for="spacing">
+            Шаг линий
+            <span class="measurement"><input id="spacing" type="number" min="1" max="100" step="0.1" value="5" aria-describedby="spacing-unit"><span id="spacing-unit">мм</span></span>
+          </label>
+          <label class="row" for="thickness">
+            Толщина линии
+            <span class="measurement"><input id="thickness" type="number" min="0.05" max="2" step="0.05" value="0.2" aria-describedby="thickness-unit"><span id="thickness-unit">мм</span></span>
+          </label>
+          <div class="row">
+            <label for="transparency">Прозрачность чёрных линий</label>
+            <output id="transparency-value" for="transparency">80%</output>
+          </div>
+          <input id="transparency" type="range" min="0" max="100" value="80" aria-valuetext="80%">
+        </fieldset>
+
+        <fieldset aria-labelledby="margin-options">
+          <p class="group-title" id="margin-options">Отступы от краёв блока</p>
+          <label class="row" for="margin-x">
+            Слева и справа
+            <span class="measurement"><input id="margin-x" type="number" min="0" max="100" step="0.1" value="5" aria-describedby="margin-x-unit"><span id="margin-x-unit">мм</span></span>
+          </label>
+          <label class="row" for="margin-y">
+            Сверху и снизу
+            <span class="measurement"><input id="margin-y" type="number" min="0" max="145" step="0.1" value="5" aria-describedby="margin-y-unit"><span id="margin-y-unit">мм</span></span>
+          </label>
+        </fieldset>
+
+        <p class="grid-message" id="grid-message" role="status"></p>
+        <div class="actions">
+          <button id="print" type="button">Печать / PDF</button>
+          <button class="secondary" id="reset-settings" type="button">Сбросить настройки</button>
+        </div>
+        <p class="print-hint">В окне печати выберите A4 и масштаб 100%. Отключите колонтитулы, если они включены.</p>
+      </form>
+    </section>
+
+    <figure class="preview">
+      <figcaption>Предпросмотр · 210 × 297 мм</figcaption>
+      <div class="preview-tools">
+        <div class="row">
+          <label for="zoom">Масштаб предпросмотра</label>
+          <output id="zoom-value" for="zoom">100%</output>
+        </div>
+        <input id="zoom" type="range" min="100" max="250" step="25" value="100" aria-valuetext="100%">
+      </div>
+      <div class="paper-window" id="paper-window" role="region" aria-label="Лист A4">
+        <svg class="paper" id="paper" width="210" height="297" viewBox="0 0 210 297" role="img" aria-label="Предпросмотр листа A4 с выбранной разлиновкой">
+          <path id="lines" fill="#000" />
+        </svg>
+      </div>
+    </figure>
+  </main>
+
+  <script>
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const pageLayouts = { 1: [1, 1], 2: [1, 2], 4: [2, 2] };
+    const storageKey = 'a4-ruling-settings';
+    const settings = document.getElementById('settings');
+    const layout = document.getElementById('layout');
+    const horizontal = document.getElementById('horizontal');
+    const vertical = document.getElementById('vertical');
+    const transparency = document.getElementById('transparency');
+    const transparencyValue = document.getElementById('transparency-value');
+    const spacingInput = document.getElementById('spacing');
+    const thicknessInput = document.getElementById('thickness');
+    const marginXInput = document.getElementById('margin-x');
+    const marginYInput = document.getElementById('margin-y');
+    const lines = document.getElementById('lines');
+    const gridMessage = document.getElementById('grid-message');
+    const printButton = document.getElementById('print');
+    const zoom = document.getElementById('zoom');
+    const zoomValue = document.getElementById('zoom-value');
+    const paperWindow = document.getElementById('paper-window');
+    const paper = document.getElementById('paper');
+    const savedControls = [layout, horizontal, vertical, spacingInput, thicknessInput,
+      transparency, marginXInput, marginYInput, zoom];
+    let previewDrag = null;
+
+    function readMeasurement(input) {
+      const value = Number.isFinite(input.valueAsNumber) ? input.valueAsNumber : Number(input.defaultValue);
+      return Math.min(Number(input.max), Math.max(Number(input.min), value));
+    }
+
+    function saveSettings() {
+      const values = {};
+      for (const control of savedControls) {
+        if (control.type === 'checkbox') values[control.id] = control.checked;
+        else if (control.type === 'number') values[control.id] = readMeasurement(control);
+        else values[control.id] = control.value;
+      }
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(values));
+      } catch {
+        // The form still works if the browser blocks storage for local files.
+      }
+    }
+
+    function restoreSettings() {
+      try {
+        const values = JSON.parse(localStorage.getItem(storageKey));
+        if (!values || typeof values !== 'object') return;
+
+        for (const control of savedControls) {
+          const value = values[control.id];
+          if (control.type === 'checkbox') {
+            if (typeof value === 'boolean') control.checked = value;
+          } else if (control === layout) {
+            if (Object.hasOwn(pageLayouts, value)) control.value = value;
+          } else if ((typeof value === 'number' || typeof value === 'string')
+            && value !== '' && Number.isFinite(Number(value))) {
+            control.value = value;
+            control.value = readMeasurement(control);
+          }
+        }
+      } catch {
+        // Use the form defaults if saved settings cannot be read.
+      }
+    }
+
+    function renderZoom() {
+      const isZoomed = zoom.valueAsNumber > 100;
+      zoomValue.value = `${zoom.value}%`;
+      zoom.setAttribute('aria-valuetext', zoomValue.value);
+      paperWindow.style.setProperty('--preview-scale', zoom.valueAsNumber / 100);
+      paperWindow.classList.toggle('is-zoomed', isZoomed);
+      paperWindow.tabIndex = isZoomed ? 0 : -1;
+    }
+
+    function lineOffsets(span, spacing, thickness) {
+      const count = Math.floor((span - thickness) / spacing + 1e-9) + 1;
+      const start = (span - (count - 1) * spacing - thickness) / 2;
+      return Array.from({ length: count }, (_, index) => start + index * spacing);
+    }
+
+    function rectangle(x, y, width, height) {
+      return `M${x.toFixed(4)} ${y.toFixed(4)}h${width.toFixed(4)}v${height.toFixed(4)}h${(-width).toFixed(4)}z`;
+    }
+
+    function render() {
+      const spacing = readMeasurement(spacingInput);
+      const thickness = readMeasurement(thicknessInput);
+      const marginX = readMeasurement(marginXInput);
+      const marginY = readMeasurement(marginYInput);
+      const [panelsAcross, panelsDown] = pageLayouts[layout.value];
+      const panelWidth = pageWidth / panelsAcross;
+      const panelHeight = pageHeight / panelsDown;
+      const width = panelWidth - 2 * marginX;
+      const height = panelHeight - 2 * marginY;
+      const rows = horizontal.checked ? lineOffsets(height, spacing, thickness) : [];
+      const columns = vertical.checked ? lineOffsets(width, spacing, thickness) : [];
+      const isGrid = horizontal.checked && vertical.checked;
+      const rectangles = [];
+
+      let message = '';
+      if (isGrid && (rows.length < 2 || columns.length < 2)) {
+        message = 'Уменьшите шаг или отступы, чтобы в каждом блоке поместилась целая клетка.';
+      } else if (isGrid && thickness >= spacing) {
+        message = 'Для клетки толщина линии должна быть меньше шага.';
+      } else if ((horizontal.checked && (width <= 0 || !rows.length))
+        || (vertical.checked && (height <= 0 || !columns.length))) {
+        message = 'Уменьшите отступы, чтобы в каждом блоке поместились линии.';
+      } else {
+        // End the lines at the outer edges of the first and last crossing lines.
+        const insetX = isGrid ? columns[0] : 0;
+        const insetY = isGrid ? rows[0] : 0;
+        for (let panel = 0; panel < panelsAcross * panelsDown; panel++) {
+          const left = (panel % panelsAcross) * panelWidth + marginX;
+          const top = Math.floor(panel / panelsAcross) * panelHeight + marginY;
+          for (const offset of rows) {
+            rectangles.push(rectangle(left + insetX, top + offset, width - 2 * insetX, thickness));
+          }
+          for (const offset of columns) {
+            rectangles.push(rectangle(left + offset, top + insetY, thickness, height - 2 * insetY));
+          }
+        }
+      }
+
+      if (gridMessage.textContent !== message) gridMessage.textContent = message;
+      printButton.disabled = Boolean(message);
+      // A single fill keeps the opacity uniform where lines cross.
+      lines.setAttribute('d', rectangles.join(' '));
+      lines.setAttribute('fill-opacity', (100 - Number(transparency.value)) / 100);
+      transparencyValue.value = `${transparency.value}%`;
+      transparency.setAttribute('aria-valuetext', transparencyValue.value);
+    }
+
+    settings.addEventListener('submit', event => event.preventDefault());
+    settings.addEventListener('input', () => {
+      render();
+      saveSettings();
+    });
+    settings.addEventListener('change', event => {
+      if (event.target.type === 'number') {
+        event.target.value = readMeasurement(event.target);
+        render();
+        saveSettings();
+      }
+    });
+    document.getElementById('reset-settings').addEventListener('click', () => {
+      settings.reset();
+      zoom.value = zoom.defaultValue;
+      renderZoom();
+      paperWindow.scrollLeft = 0;
+      paperWindow.scrollTop = 0;
+      render();
+      saveSettings();
+    });
+    zoom.addEventListener('input', () => {
+      renderZoom();
+      saveSettings();
+    });
+    paper.addEventListener('pointerdown', event => {
+      if (event.pointerType !== 'mouse' || event.button !== 0 || zoom.valueAsNumber <= 100) return;
+
+      event.preventDefault();
+      paperWindow.setPointerCapture(event.pointerId);
+      previewDrag = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        left: paperWindow.scrollLeft,
+        top: paperWindow.scrollTop,
+      };
+      paperWindow.classList.add('is-panning');
+    });
+    paperWindow.addEventListener('pointermove', event => {
+      if (previewDrag?.pointerId !== event.pointerId) return;
+
+      paperWindow.scrollLeft = previewDrag.left + previewDrag.x - event.clientX;
+      paperWindow.scrollTop = previewDrag.top + previewDrag.y - event.clientY;
+    });
+    paperWindow.addEventListener('lostpointercapture', event => {
+      if (previewDrag?.pointerId !== event.pointerId) return;
+
+      previewDrag = null;
+      paperWindow.classList.remove('is-panning');
+    });
+    printButton.addEventListener('click', () => {
+      render();
+      window.print();
+    });
+    window.addEventListener('beforeprint', render);
+    restoreSettings();
+    renderZoom();
+    render();
+  </script>
+</body>
+</html>
