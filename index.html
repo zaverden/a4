@@ -185,41 +185,28 @@
             <label class="check"><input id="horizontal" type="checkbox" checked> Горизонтальные</label>
             <label class="check"><input id="vertical" type="checkbox" checked> Вертикальные</label>
           </div>
-          <label class="check"><input id="align-to-dots" type="checkbox"> Привязка к сетке 600 dpi</label>
-          <div id="manual-dimensions">
-            <label class="row" for="spacing">
-              Шаг линий
-              <span class="measurement"><input id="spacing" type="number" min="1" max="100" step="0.1" value="5" aria-describedby="spacing-unit"><span id="spacing-unit">мм</span></span>
-            </label>
-            <label class="row" for="thickness">
-              Толщина линии
-              <span class="measurement"><input id="thickness" type="number" min="0.05" max="2" step="0.05" value="0.2" aria-describedby="thickness-unit"><span id="thickness-unit">мм</span></span>
-            </label>
-          </div>
-          <div id="dot-dimensions" hidden>
-            <label class="row" for="spacing-dots">
-              Шаг линий
-              <select id="spacing-dots">
-                <option value="48">2,032 мм</option>
-                <option value="72">3,048 мм</option>
-                <option value="96">4,064 мм</option>
-                <option value="120" selected>5,080 мм</option>
-                <option value="144">6,096 мм</option>
-                <option value="192">8,128 мм</option>
-                <option value="240">10,160 мм</option>
-              </select>
-            </label>
-            <label class="row" for="thickness-dots">
-              Толщина линии
-              <select id="thickness-dots">
-                <option value="4">0,169 мм (4 точки)</option>
-                <option value="6">0,254 мм (6 точек)</option>
-                <option value="8" selected>0,339 мм (8 точек)</option>
-                <option value="10">0,423 мм (10 точек)</option>
-                <option value="12">0,508 мм (12 точек)</option>
-              </select>
-            </label>
-          </div>
+          <label class="row" for="spacing-dots">
+            Шаг линий
+            <select id="spacing-dots">
+              <option value="48">48 точек</option>
+              <option value="72">72 точки</option>
+              <option value="96">96 точек</option>
+              <option value="120" selected>120 точек</option>
+              <option value="144">144 точки</option>
+              <option value="192">192 точки</option>
+              <option value="240">240 точек</option>
+            </select>
+          </label>
+          <label class="row" for="thickness-dots">
+            Толщина линии
+            <select id="thickness-dots">
+              <option value="4">4 точки</option>
+              <option value="6">6 точек</option>
+              <option value="8" selected>8 точек</option>
+              <option value="10">10 точек</option>
+              <option value="12">12 точек</option>
+            </select>
+          </label>
           <div class="row">
             <label for="line-tone">Оттенок линий</label>
             <output id="line-tone-value" for="line-tone">20%</output>
@@ -230,13 +217,13 @@
 
         <fieldset aria-labelledby="margin-options">
           <p class="group-title" id="margin-options">Отступы от краёв блока</p>
-          <label class="row" for="margin-x">
+          <label class="row" for="margin-x-dots">
             Слева и справа
-            <span class="measurement"><input id="margin-x" type="number" min="0" max="100" step="0.1" value="5" aria-describedby="margin-x-unit"><span id="margin-x-unit">мм</span></span>
+            <span class="measurement"><input id="margin-x-dots" type="number" min="0" max="2363" step="1" value="119" aria-describedby="margin-x-unit"><span id="margin-x-unit">точек</span></span>
           </label>
-          <label class="row" for="margin-y">
+          <label class="row" for="margin-y-dots">
             Сверху и снизу
-            <span class="measurement"><input id="margin-y" type="number" min="0" max="145" step="0.1" value="5" aria-describedby="margin-y-unit"><span id="margin-y-unit">мм</span></span>
+            <span class="measurement"><input id="margin-y-dots" type="number" min="0" max="3426" step="1" value="119" aria-describedby="margin-y-unit"><span id="margin-y-unit">точек</span></span>
           </label>
         </fieldset>
 
@@ -246,13 +233,13 @@
           <button class="secondary" id="print" type="button">Печать</button>
           <button class="secondary" id="reset-settings" type="button">Сбросить настройки</button>
         </div>
-        <p class="print-hint">Для печати векторного PDF выберите A4 и масштаб 100%.</p>
+        <p class="print-hint">Печатайте на A4 в масштабе 100% при 600 dpi.</p>
         <p class="print-hint" id="print-fallback" hidden>Если диалог печати не открылся, <a id="open-print-pdf" target="_blank" rel="noopener">откройте PDF в новой вкладке</a> и напечатайте его там.</p>
       </form>
     </section>
 
     <figure class="preview">
-      <figcaption>Предпросмотр · 210 × 297 мм</figcaption>
+      <figcaption>Предпросмотр · A4</figcaption>
       <div class="preview-tools">
         <div class="row">
           <label for="zoom">Масштаб предпросмотра</label>
@@ -281,15 +268,10 @@
     const vertical = document.getElementById('vertical');
     const lineTone = document.getElementById('line-tone');
     const lineToneValue = document.getElementById('line-tone-value');
-    const spacingInput = document.getElementById('spacing');
-    const thicknessInput = document.getElementById('thickness');
-    const alignToDots = document.getElementById('align-to-dots');
     const spacingDots = document.getElementById('spacing-dots');
     const thicknessDots = document.getElementById('thickness-dots');
-    const manualDimensions = document.getElementById('manual-dimensions');
-    const dotDimensions = document.getElementById('dot-dimensions');
-    const marginXInput = document.getElementById('margin-x');
-    const marginYInput = document.getElementById('margin-y');
+    const marginXInput = document.getElementById('margin-x-dots');
+    const marginYInput = document.getElementById('margin-y-dots');
     const lines = document.getElementById('lines');
     const gridMessage = document.getElementById('grid-message');
     const printButton = document.getElementById('print');
@@ -300,15 +282,15 @@
     const zoomValue = document.getElementById('zoom-value');
     const paperWindow = document.getElementById('paper-window');
     const paper = document.getElementById('paper');
-    const savedControls = [layout, horizontal, vertical, spacingInput, thicknessInput,
-      alignToDots, spacingDots, thicknessDots, lineTone, marginXInput, marginYInput, zoom];
+    const savedControls = [layout, horizontal, vertical, spacingDots, thicknessDots,
+      lineTone, marginXInput, marginYInput, zoom];
     let previewDrag = null;
     let printFrame = null;
     let printPdfUrl = null;
 
     function readMeasurement(input) {
       const value = Number.isFinite(input.valueAsNumber) ? input.valueAsNumber : Number(input.defaultValue);
-      return Math.min(Number(input.max), Math.max(Number(input.min), value));
+      return Math.min(Number(input.max), Math.max(Number(input.min), Math.round(value)));
     }
 
     function saveSettings() {
@@ -335,6 +317,17 @@
           && (typeof previousTransparency === 'number' || typeof previousTransparency === 'string')
           && previousTransparency !== '' && Number.isFinite(Number(previousTransparency))) {
           values[lineTone.id] = 100 - Number(previousTransparency);
+        }
+
+        for (const axis of ['x', 'y']) {
+          const previousMargin = values[`margin-${axis}`];
+          const dotKey = `margin-${axis}-dots`;
+          if (!Object.hasOwn(values, dotKey)
+            && (typeof previousMargin === 'number' || typeof previousMargin === 'string')
+            && previousMargin !== '' && Number.isFinite(Number(previousMargin))) {
+            // Keep the same inward rounding as the original 600 dpi mode.
+            values[dotKey] = Math.ceil(Number(previousMargin) * dotsPerMm - 1e-9);
+          }
         }
 
         for (const control of savedControls) {
@@ -365,65 +358,47 @@
       paperWindow.tabIndex = isZoomed ? 0 : -1;
     }
 
-    function lineStarts(min, max, spacing, thickness, align) {
-      const firstAllowed = align ? Math.ceil(min / dotPitch) * dotPitch : min;
-      const count = Math.floor((max - firstAllowed - thickness) / spacing + 1e-9) + 1;
+    function lineStarts(min, max, spacing, thickness) {
+      const firstAllowed = Math.ceil(min / dotPitch) * dotPitch;
+      const count = Math.floor((max - firstAllowed - thickness) / spacing) + 1;
       if (count < 1) return [];
 
       const lastAllowed = max - (count - 1) * spacing - thickness;
       const centered = (min + lastAllowed) / 2;
       // Use the same position within the 24-dot interval throughout the page.
-      const start = align
-        ? Math.max(firstAllowed, Math.min(
-          Math.round(centered / dotPitch) * dotPitch,
-          Math.floor(lastAllowed / dotPitch) * dotPitch,
-        ))
-        : centered;
+      const start = Math.max(firstAllowed, Math.min(
+        Math.round(centered / dotPitch) * dotPitch,
+        Math.floor(lastAllowed / dotPitch) * dotPitch,
+      ));
       return Array.from({ length: count }, (_, index) => start + index * spacing);
     }
 
     function render() {
-      const align = alignToDots.checked;
-      manualDimensions.hidden = align;
-      dotDimensions.hidden = !align;
-
-      const unitsPerMm = align ? dotsPerMm : 1;
-      const spacing = align ? Number(spacingDots.value) : readMeasurement(spacingInput);
-      const thickness = align ? Number(thicknessDots.value) : readMeasurement(thicknessInput);
+      const spacing = Number(spacingDots.value);
+      const thickness = Number(thicknessDots.value);
       const [panelsAcross, panelsDown] = pageLayouts[layout.value];
-      const pageUnitsWide = pageWidth * unitsPerMm;
-      const pageUnitsHigh = pageHeight * unitsPerMm;
-      let panelWidth = pageUnitsWide / panelsAcross;
-      let panelHeight = pageUnitsHigh / panelsDown;
-      let marginX = readMeasurement(marginXInput) * unitsPerMm;
-      let marginY = readMeasurement(marginYInput) * unitsPerMm;
-      let pageInsetX = 0;
-      let pageInsetY = 0;
-      if (align) {
-        // Identical blocks must have the same dot phase, even on a four-block sheet.
-        panelWidth = Math.floor(panelWidth / dotPitch) * dotPitch;
-        panelHeight = Math.floor(panelHeight / dotPitch) * dotPitch;
-        pageInsetX = Math.floor((pageUnitsWide - panelWidth * panelsAcross) / 2);
-        pageInsetY = Math.floor((pageUnitsHigh - panelHeight * panelsDown) / 2);
-        marginX = Math.ceil(marginX - 1e-9);
-        marginY = Math.ceil(marginY - 1e-9);
-      }
+      const pageDotsWide = pageWidth * dotsPerMm;
+      const pageDotsHigh = pageHeight * dotsPerMm;
+      // Identical blocks must have the same dot phase, even on a four-block sheet.
+      const panelWidth = Math.floor(pageDotsWide / panelsAcross / dotPitch) * dotPitch;
+      const panelHeight = Math.floor(pageDotsHigh / panelsDown / dotPitch) * dotPitch;
+      const pageInsetX = Math.floor((pageDotsWide - panelWidth * panelsAcross) / 2);
+      const pageInsetY = Math.floor((pageDotsHigh - panelHeight * panelsDown) / 2);
+      const marginX = readMeasurement(marginXInput);
+      const marginY = readMeasurement(marginYInput);
       const isGrid = horizontal.checked && vertical.checked;
       const segments = [];
 
       let message = '';
-      if (isGrid && thickness >= spacing) {
-        message = 'Для клетки толщина линии должна быть меньше шага.';
-      }
-      for (let panel = 0; !message && panel < panelsAcross * panelsDown; panel++) {
+      for (let panel = 0; panel < panelsAcross * panelsDown; panel++) {
         const originX = pageInsetX + (panel % panelsAcross) * panelWidth;
         const originY = pageInsetY + Math.floor(panel / panelsAcross) * panelHeight;
         let left = originX + marginX;
         let top = originY + marginY;
         let right = originX + panelWidth - marginX;
         let bottom = originY + panelHeight - marginY;
-        const rows = horizontal.checked ? lineStarts(top, bottom, spacing, thickness, align) : [];
-        const columns = vertical.checked ? lineStarts(left, right, spacing, thickness, align) : [];
+        const rows = horizontal.checked ? lineStarts(top, bottom, spacing, thickness) : [];
+        const columns = vertical.checked ? lineStarts(left, right, spacing, thickness) : [];
         if (isGrid && (rows.length < 2 || columns.length < 2)) {
           message = 'Уменьшите шаг или отступы, чтобы в каждом блоке поместилась целая клетка.';
           break;
@@ -454,8 +429,8 @@
       printButton.disabled = Boolean(message);
       downloadPdfButton.disabled = Boolean(message);
       const shade = Math.round(255 * (100 - lineTone.valueAsNumber) / 100);
-      const segmentsMm = segments.map(segment => segment.map(coordinate => coordinate / unitsPerMm));
-      const thicknessMm = thickness / unitsPerMm;
+      const segmentsMm = segments.map(segment => segment.map(coordinate => coordinate / dotsPerMm));
+      const thicknessMm = thickness / dotsPerMm;
       const path = segmentsMm.map(([x1, y1, x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`);
       lines.setAttribute('d', path.join(' '));
       lines.setAttribute('stroke', `rgb(${shade}, ${shade}, ${shade})`);
