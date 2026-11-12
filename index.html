@@ -67,6 +67,7 @@
 
     output { color: var(--muted); font-variant-numeric: tabular-nums; }
     input[type="range"] { display: block; width: 100%; margin: 0; }
+    .tone-scale { display: flex; justify-content: space-between; margin-top: 3px; color: var(--muted); font-size: 12px; }
 
     .actions {
       display: flex;
@@ -145,7 +146,13 @@
       html, body { margin: 0; padding: 0; background: #fff; }
       .controls, figcaption, .preview-tools { display: none; }
       .workspace, .preview { display: block; max-width: none; width: auto; margin: 0; padding: 0; }
-      .paper { width: 210mm; height: 297mm; box-shadow: none; }
+      .paper {
+        width: 210mm;
+        height: 297mm;
+        box-shadow: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
@@ -179,10 +186,11 @@
             <span class="measurement"><input id="thickness" type="number" min="0.05" max="2" step="0.05" value="0.2" aria-describedby="thickness-unit"><span id="thickness-unit">мм</span></span>
           </label>
           <div class="row">
-            <label for="transparency">Прозрачность чёрных линий</label>
-            <output id="transparency-value" for="transparency">80%</output>
+            <label for="line-tone">Оттенок линий</label>
+            <output id="line-tone-value" for="line-tone">20%</output>
           </div>
-          <input id="transparency" type="range" min="0" max="100" value="80" aria-valuetext="80%">
+          <input id="line-tone" type="range" min="0" max="100" value="20" aria-valuetext="20% чёрного">
+          <div class="tone-scale" aria-hidden="true"><span>Белый</span><span>Чёрный</span></div>
         </fieldset>
 
         <fieldset aria-labelledby="margin-options">
@@ -217,7 +225,7 @@
       </div>
       <div class="paper-window" id="paper-window" role="region" aria-label="Лист A4">
         <svg class="paper" id="paper" width="210" height="297" viewBox="0 0 210 297" role="img" aria-label="Предпросмотр листа A4 с выбранной разлиновкой">
-          <path id="lines" fill="#000" />
+          <path id="lines" fill="#ccc" />
         </svg>
       </div>
     </figure>
@@ -232,8 +240,8 @@
     const layout = document.getElementById('layout');
     const horizontal = document.getElementById('horizontal');
     const vertical = document.getElementById('vertical');
-    const transparency = document.getElementById('transparency');
-    const transparencyValue = document.getElementById('transparency-value');
+    const lineTone = document.getElementById('line-tone');
+    const lineToneValue = document.getElementById('line-tone-value');
     const spacingInput = document.getElementById('spacing');
     const thicknessInput = document.getElementById('thickness');
     const marginXInput = document.getElementById('margin-x');
@@ -246,7 +254,7 @@
     const paperWindow = document.getElementById('paper-window');
     const paper = document.getElementById('paper');
     const savedControls = [layout, horizontal, vertical, spacingInput, thicknessInput,
-      transparency, marginXInput, marginYInput, zoom];
+      lineTone, marginXInput, marginYInput, zoom];
     let previewDrag = null;
 
     function readMeasurement(input) {
@@ -272,6 +280,13 @@
       try {
         const values = JSON.parse(localStorage.getItem(storageKey));
         if (!values || typeof values !== 'object') return;
+
+        const previousTransparency = values.transparency;
+        if (!Object.hasOwn(values, lineTone.id)
+          && (typeof previousTransparency === 'number' || typeof previousTransparency === 'string')
+          && previousTransparency !== '' && Number.isFinite(Number(previousTransparency))) {
+          values[lineTone.id] = 100 - Number(previousTransparency);
+        }
 
         for (const control of savedControls) {
           const value = values[control.id];
@@ -350,11 +365,11 @@
 
       if (gridMessage.textContent !== message) gridMessage.textContent = message;
       printButton.disabled = Boolean(message);
-      // A single fill keeps the opacity uniform where lines cross.
+      const shade = Math.round(255 * (100 - lineTone.valueAsNumber) / 100);
       lines.setAttribute('d', rectangles.join(' '));
-      lines.setAttribute('fill-opacity', (100 - Number(transparency.value)) / 100);
-      transparencyValue.value = `${transparency.value}%`;
-      transparency.setAttribute('aria-valuetext', transparencyValue.value);
+      lines.setAttribute('fill', `rgb(${shade}, ${shade}, ${shade})`);
+      lineToneValue.value = `${lineTone.value}%`;
+      lineTone.setAttribute('aria-valuetext', `${lineToneValue.value} чёрного`);
     }
 
     settings.addEventListener('submit', event => event.preventDefault());
