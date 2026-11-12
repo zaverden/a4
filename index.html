@@ -46,16 +46,6 @@
     .check { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 14px; }
     input { accent-color: var(--accent); }
     input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
-    .measurement { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
-    input[type="number"] {
-      width: 72px;
-      height: 30px;
-      padding: 5px 7px;
-      border: 1px solid #c7cfdf;
-      border-radius: 7px;
-      color: inherit;
-      font: inherit;
-    }
     select {
       padding: 6px 8px;
       border: 1px solid #c7cfdf;
@@ -67,7 +57,23 @@
 
     output { color: var(--muted); font-variant-numeric: tabular-nums; }
     input[type="range"] { display: block; width: 100%; margin: 0; }
-    .tone-scale { display: flex; justify-content: space-between; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    input[type="range"][hidden] { display: none; }
+    .dimension-control { margin-bottom: 6px; }
+    .mode-note { margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .value-entry { display: inline-flex; align-items: center; justify-content: end; flex-wrap: wrap; gap: 4px; color: var(--muted); font-size: 12px; }
+    .value-entry input {
+      width: 60px;
+      padding: 3px 5px;
+      border: 1px solid #c7cfdf;
+      border-radius: 5px;
+      background: #fff;
+      color: var(--ink, #212c47);
+      font: inherit;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .value-entry output { white-space: nowrap; }
 
     .actions {
       display: flex;
@@ -178,6 +184,15 @@
               <option value="4">4 на страницу</option>
             </select>
           </label>
+          <label class="row" for="measurement-mode">
+            Привязка
+            <select id="measurement-mode" aria-describedby="dots-note">
+              <option value="dots" selected>Сетка 600 dpi</option>
+              <option value="mm">Миллиметры</option>
+            </select>
+          </label>
+          <p class="mode-note" id="dots-note">При 600 dpi и масштабе 100% на большинстве принтеров линии получаются более равномерными. Размеры клеток кратны точкам и <em>не привязаны к миллиметровой сетке</em>.</p>
+          <p class="mode-note" id="mm-note" hidden>При масштабе 100% размер клеток соответствует выбранному шагу в миллиметрах. На бумаге толщина может различаться, что особенно заметно у тонких серых линий.</p>
         </fieldset>
         <fieldset aria-labelledby="line-options">
           <p class="group-title" id="line-options">Линии</p>
@@ -185,46 +200,66 @@
             <label class="check"><input id="horizontal" type="checkbox" checked> Горизонтальные</label>
             <label class="check"><input id="vertical" type="checkbox" checked> Вертикальные</label>
           </div>
-          <label class="row" for="spacing-dots">
-            Шаг линий
-            <select id="spacing-dots">
-              <option value="48">48 точек</option>
-              <option value="72">72 точки</option>
-              <option value="96">96 точек</option>
-              <option value="120" selected>120 точек</option>
-              <option value="144">144 точки</option>
-              <option value="192">192 точки</option>
-              <option value="240">240 точек</option>
-            </select>
-          </label>
-          <label class="row" for="thickness-dots">
-            Толщина линии
-            <select id="thickness-dots">
-              <option value="4">4 точки</option>
-              <option value="6">6 точек</option>
-              <option value="8" selected>8 точек</option>
-              <option value="10">10 точек</option>
-              <option value="12">12 точек</option>
-            </select>
-          </label>
-          <div class="row">
-            <label for="line-tone">Оттенок линий</label>
-            <output id="line-tone-value" for="line-tone">20%</output>
+          <div class="dimension-control">
+            <div class="row">
+              <label id="spacing-label" for="spacing-entry">Шаг линий</label>
+              <span class="value-entry">
+                <input id="spacing-entry" type="text" inputmode="numeric" value="118" aria-describedby="spacing-unit">
+                <span id="spacing-unit">точ.</span>
+                <output id="spacing-value" for="spacing-dots spacing spacing-entry">≈4,995 мм</output>
+              </span>
+            </div>
+            <input id="spacing-dots" type="range" min="45" max="1200" step="1" value="118" aria-labelledby="spacing-label">
+            <input id="spacing" type="range" min="2" max="50" step="0.5" value="5" aria-labelledby="spacing-label" hidden>
           </div>
-          <input id="line-tone" type="range" min="0" max="100" value="20" aria-valuetext="20% чёрного">
-          <div class="tone-scale" aria-hidden="true"><span>Белый</span><span>Чёрный</span></div>
+          <div class="dimension-control">
+            <div class="row">
+              <label id="thickness-label" for="thickness-entry">Толщина линии</label>
+              <span class="value-entry">
+                <input id="thickness-entry" type="text" inputmode="numeric" value="5" aria-describedby="thickness-unit">
+                <span id="thickness-unit">точ.</span>
+                <output id="thickness-value" for="thickness-dots thickness thickness-entry">≈0,212 мм</output>
+              </span>
+            </div>
+            <input id="thickness-dots" type="range" min="1" max="50" step="1" value="5" aria-labelledby="thickness-label">
+            <input id="thickness" type="range" min="0.05" max="2" step="0.05" value="0.2" aria-labelledby="thickness-label" hidden>
+          </div>
+          <div class="row">
+            <label id="transparency-label" for="transparency-entry">Прозрачность линий</label>
+            <span class="value-entry">
+              <input id="transparency-entry" type="text" inputmode="numeric" value="80" aria-describedby="transparency-unit">
+              <span id="transparency-unit">%</span>
+            </span>
+          </div>
+          <input id="transparency" type="range" min="0" max="100" step="1" value="80" aria-labelledby="transparency-label" aria-valuetext="80%">
         </fieldset>
 
         <fieldset aria-labelledby="margin-options">
           <p class="group-title" id="margin-options">Отступы от краёв блока</p>
-          <label class="row" for="margin-x-dots">
-            Слева и справа
-            <span class="measurement"><input id="margin-x-dots" type="number" min="0" max="2363" step="1" value="119" aria-describedby="margin-x-unit"><span id="margin-x-unit">точек</span></span>
-          </label>
-          <label class="row" for="margin-y-dots">
-            Сверху и снизу
-            <span class="measurement"><input id="margin-y-dots" type="number" min="0" max="3426" step="1" value="119" aria-describedby="margin-y-unit"><span id="margin-y-unit">точек</span></span>
-          </label>
+          <div class="dimension-control">
+            <div class="row">
+              <label id="margin-x-label" for="margin-x-entry">Слева и справа</label>
+              <span class="value-entry">
+                <input id="margin-x-entry" type="text" inputmode="numeric" value="118" aria-describedby="margin-x-unit">
+                <span id="margin-x-unit">точ.</span>
+                <output id="margin-x-value" for="margin-x-dots margin-x margin-x-entry">≈4,995 мм</output>
+              </span>
+            </div>
+            <input id="margin-x-dots" type="range" min="0" max="500" step="1" value="118" aria-labelledby="margin-x-label">
+            <input id="margin-x" type="range" min="0" max="20" step="0.5" value="5" aria-labelledby="margin-x-label" hidden>
+          </div>
+          <div class="dimension-control">
+            <div class="row">
+              <label id="margin-y-label" for="margin-y-entry">Сверху и снизу</label>
+              <span class="value-entry">
+                <input id="margin-y-entry" type="text" inputmode="numeric" value="118" aria-describedby="margin-y-unit">
+                <span id="margin-y-unit">точ.</span>
+                <output id="margin-y-value" for="margin-y-dots margin-y margin-y-entry">≈4,995 мм</output>
+              </span>
+            </div>
+            <input id="margin-y-dots" type="range" min="0" max="500" step="1" value="118" aria-labelledby="margin-y-label">
+            <input id="margin-y" type="range" min="0" max="20" step="0.5" value="5" aria-labelledby="margin-y-label" hidden>
+          </div>
         </fieldset>
 
         <p class="grid-message" id="grid-message" role="status"></p>
@@ -233,7 +268,7 @@
           <button class="secondary" id="print" type="button">Печать</button>
           <button class="secondary" id="reset-settings" type="button">Сбросить настройки</button>
         </div>
-        <p class="print-hint">Печатайте на A4 в масштабе 100% при 600 dpi.</p>
+        <p class="print-hint" id="print-hint">Печатайте на A4 в масштабе 100% при 600 dpi.</p>
         <p class="print-hint" id="print-fallback" hidden>Если диалог печати не открылся, <a id="open-print-pdf" target="_blank" rel="noopener">откройте PDF в новой вкладке</a> и напечатайте его там.</p>
       </form>
     </section>
@@ -242,14 +277,17 @@
       <figcaption>Предпросмотр · A4</figcaption>
       <div class="preview-tools">
         <div class="row">
-          <label for="zoom">Масштаб предпросмотра</label>
-          <output id="zoom-value" for="zoom">100%</output>
+          <label id="zoom-label" for="zoom-entry">Масштаб предпросмотра</label>
+          <span class="value-entry">
+            <input id="zoom-entry" type="text" inputmode="numeric" value="100" aria-describedby="zoom-unit">
+            <span id="zoom-unit">%</span>
+          </span>
         </div>
-        <input id="zoom" type="range" min="100" max="250" step="25" value="100" aria-valuetext="100%">
+        <input id="zoom" type="range" min="100" max="250" step="25" value="100" aria-labelledby="zoom-label" aria-valuetext="100%">
       </div>
       <div class="paper-window" id="paper-window" role="region" aria-label="Лист A4">
         <svg class="paper" id="paper" width="210" height="297" viewBox="0 0 210 297" role="img" aria-label="Предпросмотр листа A4 с выбранной разлиновкой">
-          <path id="lines" fill="none" stroke="#ccc" stroke-linecap="butt" />
+          <path id="lines" fill="none" stroke="#000" opacity="0.2" stroke-linecap="butt" />
         </svg>
       </div>
     </figure>
@@ -261,43 +299,46 @@
     const dotsPerMm = 600 / 25.4;
     const dotPitch = 24;
     const pageLayouts = { 1: [1, 1], 2: [1, 2], 4: [2, 2] };
+    const measureFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
     const storageKey = 'a4-ruling-settings';
     const settings = document.getElementById('settings');
     const layout = document.getElementById('layout');
+    const measurementMode = document.getElementById('measurement-mode');
     const horizontal = document.getElementById('horizontal');
     const vertical = document.getElementById('vertical');
-    const lineTone = document.getElementById('line-tone');
-    const lineToneValue = document.getElementById('line-tone-value');
-    const spacingDots = document.getElementById('spacing-dots');
-    const thicknessDots = document.getElementById('thickness-dots');
-    const marginXInput = document.getElementById('margin-x-dots');
-    const marginYInput = document.getElementById('margin-y-dots');
+    const transparency = document.getElementById('transparency');
+    const transparencyEntry = document.getElementById('transparency-entry');
+    const dotsNote = document.getElementById('dots-note');
+    const mmNote = document.getElementById('mm-note');
+    const dimensions = ['spacing', 'thickness', 'margin-x', 'margin-y'].map(id => ({
+      dots: document.getElementById(`${id}-dots`),
+      mm: document.getElementById(id),
+      entry: document.getElementById(`${id}-entry`),
+      unit: document.getElementById(`${id}-unit`),
+      output: document.getElementById(`${id}-value`),
+    }));
     const lines = document.getElementById('lines');
     const gridMessage = document.getElementById('grid-message');
     const printButton = document.getElementById('print');
     const downloadPdfButton = document.getElementById('download-pdf');
+    const printHint = document.getElementById('print-hint');
     const printFallback = document.getElementById('print-fallback');
     const openPrintPdf = document.getElementById('open-print-pdf');
     const zoom = document.getElementById('zoom');
-    const zoomValue = document.getElementById('zoom-value');
+    const zoomEntry = document.getElementById('zoom-entry');
     const paperWindow = document.getElementById('paper-window');
     const paper = document.getElementById('paper');
-    const savedControls = [layout, horizontal, vertical, spacingDots, thicknessDots,
-      lineTone, marginXInput, marginYInput, zoom];
+    const savedControls = [layout, measurementMode, horizontal, vertical,
+      ...dimensions.flatMap(({ dots, mm }) => [dots, mm]), transparency, zoom];
+    let previousMode = measurementMode.value;
     let previewDrag = null;
     let printFrame = null;
     let printPdfUrl = null;
-
-    function readMeasurement(input) {
-      const value = Number.isFinite(input.valueAsNumber) ? input.valueAsNumber : Number(input.defaultValue);
-      return Math.min(Number(input.max), Math.max(Number(input.min), Math.round(value)));
-    }
 
     function saveSettings() {
       const values = {};
       for (const control of savedControls) {
         if (control.type === 'checkbox') values[control.id] = control.checked;
-        else if (control.type === 'number') values[control.id] = readMeasurement(control);
         else values[control.id] = control.value;
       }
       try {
@@ -312,11 +353,11 @@
         const values = JSON.parse(localStorage.getItem(storageKey));
         if (!values || typeof values !== 'object') return;
 
-        const previousTransparency = values.transparency;
-        if (!Object.hasOwn(values, lineTone.id)
-          && (typeof previousTransparency === 'number' || typeof previousTransparency === 'string')
-          && previousTransparency !== '' && Number.isFinite(Number(previousTransparency))) {
-          values[lineTone.id] = 100 - Number(previousTransparency);
+        const previousTone = values['line-tone'];
+        if (!Object.hasOwn(values, transparency.id)
+          && (typeof previousTone === 'number' || typeof previousTone === 'string')
+          && previousTone !== '' && Number.isFinite(Number(previousTone))) {
+          values[transparency.id] = 100 - Number(previousTone);
         }
 
         for (const axis of ['x', 'y']) {
@@ -340,8 +381,7 @@
             }
           } else if ((typeof value === 'number' || typeof value === 'string')
             && value !== '' && Number.isFinite(Number(value))) {
-            control.value = value;
-            control.value = readMeasurement(control);
+            control.value = snapToSlider(Number(value), control);
           }
         }
       } catch {
@@ -349,56 +389,116 @@
       }
     }
 
-    function renderZoom() {
+    function snapToSlider(value, slider) {
+      const minimum = Number(slider.min);
+      const maximum = Number(slider.max);
+      const step = Number(slider.step || 1);
+      const bounded = Math.min(maximum, Math.max(minimum, value));
+      const steps = Math.round((bounded - minimum) / step + 1e-9);
+      return String(Number((minimum + steps * step).toFixed(6)));
+    }
+
+    function applyEntry(entry, slider) {
+      const text = entry.value.trim().replace(',', '.');
+      if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return false;
+      const value = Number(text);
+      if (!Number.isFinite(value)) return false;
+      slider.value = snapToSlider(value, slider);
+      return true;
+    }
+
+    function renderZoom(editingEntry = false) {
       const isZoomed = zoom.valueAsNumber > 100;
-      zoomValue.value = `${zoom.value}%`;
-      zoom.setAttribute('aria-valuetext', zoomValue.value);
+      if (!editingEntry) zoomEntry.value = zoom.value;
+      zoom.setAttribute('aria-valuetext', `${zoom.value}%`);
       paperWindow.style.setProperty('--preview-scale', zoom.valueAsNumber / 100);
       paperWindow.classList.toggle('is-zoomed', isZoomed);
       paperWindow.tabIndex = isZoomed ? 0 : -1;
     }
 
-    function lineStarts(min, max, spacing, thickness) {
-      const firstAllowed = Math.ceil(min / dotPitch) * dotPitch;
-      const count = Math.floor((max - firstAllowed - thickness) / spacing) + 1;
+    function formatMeasurement(value) {
+      const rounded = Number(value.toFixed(3));
+      const approximate = Math.abs(rounded - value) > 1e-9 ? '≈' : '';
+      return approximate + measureFormat.format(rounded);
+    }
+
+    function updateDimension({ dots, mm, entry, unit, output }, gridAligned, editingEntry) {
+      dots.hidden = !gridAligned;
+      mm.hidden = gridAligned;
+      const active = gridAligned ? dots : mm;
+      const value = active.valueAsNumber;
+      const millimetres = gridAligned ? value / dotsPerMm : value;
+      const dotCount = gridAligned ? value : value * dotsPerMm;
+      const mmText = `${formatMeasurement(millimetres)} мм`;
+      const dotsText = `${formatMeasurement(dotCount)} точ.`;
+      unit.textContent = gridAligned ? 'точ.' : 'мм';
+      output.value = gridAligned ? mmText : dotsText;
+      entry.inputMode = gridAligned ? 'numeric' : 'decimal';
+      if (entry !== editingEntry) entry.value = measureFormat.format(value).replace(/\s/g, '');
+      active.setAttribute('aria-valuetext', `${mmText} · ${dotsText}`);
+      return value;
+    }
+
+    function lineStarts(min, max, spacing, thickness, gridAligned) {
+      // These coordinates are the top or left edges of the lines.
+      const firstAllowed = gridAligned ? Math.ceil(min / dotPitch) * dotPitch : min;
+      const count = Math.floor((max - firstAllowed - thickness) / spacing + 1e-9) + 1;
       if (count < 1) return [];
 
       const lastAllowed = max - (count - 1) * spacing - thickness;
       const centered = (min + lastAllowed) / 2;
-      // Use the same position within the 24-dot interval throughout the page.
-      const start = Math.max(firstAllowed, Math.min(
-        Math.round(centered / dotPitch) * dotPitch,
-        Math.floor(lastAllowed / dotPitch) * dotPitch,
-      ));
+      // Keep the first line in each aligned block on the same 24-dot phase.
+      const start = gridAligned
+        ? Math.max(firstAllowed, Math.min(
+          Math.round(centered / dotPitch) * dotPitch,
+          Math.floor(lastAllowed / dotPitch) * dotPitch,
+        ))
+        : centered;
       return Array.from({ length: count }, (_, index) => start + index * spacing);
     }
 
-    function render() {
-      const spacing = Number(spacingDots.value);
-      const thickness = Number(thicknessDots.value);
+    function render(editingEntry = null) {
+      const gridAligned = measurementMode.value === 'dots';
+      const unitsPerMm = gridAligned ? dotsPerMm : 1;
+      const [spacing, thickness, marginX, marginY] = dimensions.map(dimension =>
+        updateDimension(dimension, gridAligned, editingEntry));
+      dotsNote.hidden = !gridAligned;
+      mmNote.hidden = gridAligned;
+      measurementMode.setAttribute('aria-describedby', gridAligned ? dotsNote.id : mmNote.id);
+      printHint.textContent = gridAligned
+        ? 'Печатайте на A4 в масштабе 100% при 600 dpi.'
+        : 'Печатайте на A4 в масштабе 100%.';
       const [panelsAcross, panelsDown] = pageLayouts[layout.value];
-      const pageDotsWide = pageWidth * dotsPerMm;
-      const pageDotsHigh = pageHeight * dotsPerMm;
-      // Identical blocks must have the same dot phase, even on a four-block sheet.
-      const panelWidth = Math.floor(pageDotsWide / panelsAcross / dotPitch) * dotPitch;
-      const panelHeight = Math.floor(pageDotsHigh / panelsDown / dotPitch) * dotPitch;
-      const pageInsetX = Math.floor((pageDotsWide - panelWidth * panelsAcross) / 2);
-      const pageInsetY = Math.floor((pageDotsHigh - panelHeight * panelsDown) / 2);
-      const marginX = readMeasurement(marginXInput);
-      const marginY = readMeasurement(marginYInput);
+      const pageUnitsWide = pageWidth * unitsPerMm;
+      const pageUnitsHigh = pageHeight * unitsPerMm;
+      let panelWidth = pageUnitsWide / panelsAcross;
+      let panelHeight = pageUnitsHigh / panelsDown;
+      let pageInsetX = 0;
+      let pageInsetY = 0;
+      if (gridAligned) {
+        // Identical blocks must have the same dot phase, even on a four-block sheet.
+        panelWidth = Math.floor(panelWidth / dotPitch) * dotPitch;
+        panelHeight = Math.floor(panelHeight / dotPitch) * dotPitch;
+        pageInsetX = Math.floor((pageUnitsWide - panelWidth * panelsAcross) / 2);
+        pageInsetY = Math.floor((pageUnitsHigh - panelHeight * panelsDown) / 2);
+      }
       const isGrid = horizontal.checked && vertical.checked;
       const segments = [];
+      const rectangles = [];
 
       let message = '';
-      for (let panel = 0; panel < panelsAcross * panelsDown; panel++) {
+      if (isGrid && thickness >= spacing) {
+        message = 'Для клетки толщина линии должна быть меньше шага.';
+      }
+      for (let panel = 0; !message && panel < panelsAcross * panelsDown; panel++) {
         const originX = pageInsetX + (panel % panelsAcross) * panelWidth;
         const originY = pageInsetY + Math.floor(panel / panelsAcross) * panelHeight;
         let left = originX + marginX;
         let top = originY + marginY;
         let right = originX + panelWidth - marginX;
         let bottom = originY + panelHeight - marginY;
-        const rows = horizontal.checked ? lineStarts(top, bottom, spacing, thickness) : [];
-        const columns = vertical.checked ? lineStarts(left, right, spacing, thickness) : [];
+        const rows = horizontal.checked ? lineStarts(top, bottom, spacing, thickness, gridAligned) : [];
+        const columns = vertical.checked ? lineStarts(left, right, spacing, thickness, gridAligned) : [];
         if (isGrid && (rows.length < 2 || columns.length < 2)) {
           message = 'Уменьшите шаг или отступы, чтобы в каждом блоке поместилась целая клетка.';
           break;
@@ -415,56 +515,81 @@
           [top, bottom] = [rows[0], rows.at(-1) + thickness];
         }
         for (const row of rows) {
-          const y = row + thickness / 2;
-          segments.push([left, y, right, y]);
+          if (gridAligned) {
+            const y = row + thickness / 2;
+            segments.push([left, y, right, y]);
+          } else {
+            rectangles.push([left, row, right - left, thickness]);
+          }
         }
         for (const column of columns) {
-          const x = column + thickness / 2;
-          segments.push([x, top, x, bottom]);
+          if (gridAligned) {
+            const x = column + thickness / 2;
+            segments.push([x, top, x, bottom]);
+          } else {
+            rectangles.push([column, top, thickness, bottom - top]);
+          }
         }
       }
 
-      if (message) segments.length = 0;
+      if (message) {
+        segments.length = 0;
+        rectangles.length = 0;
+      }
       if (gridMessage.textContent !== message) gridMessage.textContent = message;
       printButton.disabled = Boolean(message);
       downloadPdfButton.disabled = Boolean(message);
-      const shade = Math.round(255 * (100 - lineTone.valueAsNumber) / 100);
-      const segmentsMm = segments.map(segment => segment.map(coordinate => coordinate / dotsPerMm));
-      const thicknessMm = thickness / dotsPerMm;
-      const path = segmentsMm.map(([x1, y1, x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`);
+      const opacity = (100 - transparency.valueAsNumber) / 100;
+      const segmentsMm = segments.map(segment => segment.map(coordinate => coordinate / unitsPerMm));
+      const thicknessMm = thickness / unitsPerMm;
+      const path = gridAligned
+        ? segmentsMm.map(([x1, y1, x2, y2]) => `M${x1} ${y1}L${x2} ${y2}`)
+        : rectangles.map(([x, y, width, height]) => `M${x} ${y}h${width}v${height}h${-width}Z`);
       lines.setAttribute('d', path.join(' '));
-      lines.setAttribute('stroke', `rgb(${shade}, ${shade}, ${shade})`);
+      lines.setAttribute('stroke', gridAligned ? '#000' : 'none');
+      lines.setAttribute('fill', gridAligned ? 'none' : '#000');
+      lines.setAttribute('opacity', opacity);
       lines.setAttribute('stroke-width', thicknessMm);
-      lineToneValue.value = `${lineTone.value}%`;
-      lineTone.setAttribute('aria-valuetext', `${lineToneValue.value} чёрного`);
+      if (transparencyEntry !== editingEntry) transparencyEntry.value = transparency.value;
+      transparency.setAttribute('aria-valuetext', `${transparency.value}%`);
 
-      return message ? null : { segments: segmentsMm, thickness: thicknessMm, shade };
+      return message ? null : { segments: segmentsMm, rectangles, thickness: thicknessMm, opacity, gridAligned };
     }
 
-    function createPdf({ segments, thickness, shade }) {
+    function createPdf({ segments, rectangles, thickness, opacity, gridAligned }) {
       const pointsPerMm = 72 / 25.4;
       const scale = pointsPerMm.toFixed(10);
       const width = (pageWidth * pointsPerMm).toFixed(6);
       const height = (pageHeight * pointsPerMm).toFixed(6);
-      const commands = [
-        'q',
-        // Use the same millimetre coordinates as the SVG, with the origin at the top left.
-        `${scale} 0 0 -${scale} 0 ${height} cm`,
-        '/StrokeAdjust gs',
-        `${thickness.toFixed(6)} w`,
-        `${(shade / 255).toFixed(6)} G`,
-        '0 J',
-      ];
-      for (const segment of segments) {
-        const [x1, y1, x2, y2] = segment.map(value => value.toFixed(6));
-        commands.push(`${x1} ${y1} m ${x2} ${y2} l`);
+      // Use the same millimetre coordinates as the SVG, with the origin at the top left.
+      const commands = ['q', `${scale} 0 0 -${scale} 0 ${height} cm`];
+      const needsLineStyle = gridAligned || opacity < 1;
+      if (needsLineStyle) commands.push('/LineStyle gs');
+      if (gridAligned) {
+        commands.push(`${thickness.toFixed(6)} w`, '0 G', '0 J');
+        for (const segment of segments) {
+          const [x1, y1, x2, y2] = segment.map(value => value.toFixed(6));
+          commands.push(`${x1} ${y1} m ${x2} ${y2} l`);
+        }
+        commands.push('S');
+      } else {
+        // Filled paths encode the exact edges without automatic stroke adjustment.
+        commands.push('0 g');
+        for (const rectangle of rectangles) {
+          commands.push(`${rectangle.map(value => value.toFixed(6)).join(' ')} re`);
+        }
+        commands.push('f');
       }
-      const stream = [...commands, 'S', 'Q', ''].join('\n');
+      const stream = [...commands, 'Q', ''].join('\n');
+      const strokeAdjustment = gridAligned ? ' /SA true' : '';
+      const resources = needsLineStyle
+        ? `<< /ExtGState << /LineStyle << /Type /ExtGState${strokeAdjustment} /CA ${opacity} /ca ${opacity} >> >> >>`
+        : '<< >>';
       const objects = [
         '<< /Type /Catalog /Pages 2 0 R /ViewerPreferences << /PrintScaling /None >> >>',
         '<< /Type /Pages /Count 1 /Kids [3 0 R] >>',
         `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}]
-          /Resources << /ExtGState << /StrokeAdjust << /Type /ExtGState /SA true >> >> >>
+          /Resources ${resources}
           /Contents 4 0 R >>`,
         `<< /Length ${stream.length} >>\nstream\n${stream}endstream`,
       ];
@@ -487,21 +612,29 @@
     }
 
     settings.addEventListener('submit', event => event.preventDefault());
-    settings.addEventListener('input', () => {
-      printFallback.hidden = true;
-      render();
-      saveSettings();
-    });
-    settings.addEventListener('change', event => {
-      if (event.target.type === 'number') {
-        event.target.value = readMeasurement(event.target);
-        render();
-        saveSettings();
+    settings.addEventListener('input', event => {
+      const target = event.target;
+      const mode = measurementMode.value;
+      if (target === measurementMode && mode !== previousMode) {
+        const conversion = mode === 'dots' ? dotsPerMm : 1 / dotsPerMm;
+        for (const dimension of dimensions) {
+          const slider = dimension[mode];
+          slider.value = snapToSlider(dimension[previousMode].valueAsNumber * conversion, slider);
+        }
+        previousMode = mode;
       }
+      const dimension = dimensions.find(field => field.entry === target);
+      const slider = target === transparencyEntry ? transparency : dimension?.[mode];
+      if (slider && !applyEntry(target, slider)) return;
+
+      printFallback.hidden = true;
+      render(slider ? target : null);
+      saveSettings();
     });
     document.getElementById('reset-settings').addEventListener('click', () => {
       printFallback.hidden = true;
       settings.reset();
+      previousMode = measurementMode.value;
       zoom.value = zoom.defaultValue;
       renderZoom();
       paperWindow.scrollLeft = 0;
@@ -513,6 +646,22 @@
       renderZoom();
       saveSettings();
     });
+    zoomEntry.addEventListener('input', () => {
+      if (applyEntry(zoomEntry, zoom)) {
+        renderZoom(true);
+        saveSettings();
+      }
+    });
+    zoomEntry.addEventListener('blur', () => renderZoom());
+    for (const entry of [...dimensions.map(dimension => dimension.entry), transparencyEntry, zoomEntry]) {
+      entry.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          entry.blur();
+        }
+      });
+      if (entry !== zoomEntry) entry.addEventListener('blur', () => render());
+    }
     paper.addEventListener('pointerdown', event => {
       if (event.pointerType !== 'mouse' || event.button !== 0 || zoom.valueAsNumber <= 100) return;
 
@@ -586,8 +735,9 @@
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     });
-    window.addEventListener('beforeprint', render);
+    window.addEventListener('beforeprint', () => render());
     restoreSettings();
+    previousMode = measurementMode.value;
     renderZoom();
     render();
   </script>
