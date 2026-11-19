@@ -42,10 +42,9 @@
     .group-title { margin-bottom: 5px; font-size: 14px; font-weight: 700; }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; font-size: 14px; }
     .row + .row { margin-top: 4px; }
-    .line-directions { display: flex; flex-wrap: wrap; gap: 0 12px; margin-bottom: 4px; }
-    .check { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 14px; }
+    .pattern-row { flex-wrap: wrap; }
+    .pattern-row select { max-width: 100%; }
     input { accent-color: var(--accent); }
-    input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
     select {
       padding: 6px 8px;
       border: 1px solid #c7cfdf;
@@ -177,7 +176,7 @@
       <form class="settings" id="settings">
         <fieldset aria-label="Шаблон листа">
           <label class="row" for="layout">
-            Шаблон
+            Блоков на листе
             <select id="layout">
               <option value="1" selected>1 на страницу</option>
               <option value="2">2 на страницу</option>
@@ -196,10 +195,16 @@
         </fieldset>
         <fieldset aria-labelledby="line-options">
           <p class="group-title" id="line-options">Линии</p>
-          <div class="line-directions">
-            <label class="check"><input id="horizontal" type="checkbox" checked> Горизонтальные</label>
-            <label class="check"><input id="vertical" type="checkbox" checked> Вертикальные</label>
-          </div>
+          <label class="row pattern-row" for="pattern">
+            Шаблон
+            <select id="pattern">
+              <option value="grid" selected>Клетка</option>
+              <option value="horizontal">Линия горизонтальная</option>
+              <option value="vertical">Линия вертикальная</option>
+              <option value="narrow-horizontal">Узкая линия горизонтальная</option>
+              <option value="narrow-vertical">Узкая линия вертикальная</option>
+            </select>
+          </label>
           <div class="dimension-control">
             <div class="row">
               <label id="spacing-label" for="spacing-entry">Шаг линий</label>
@@ -304,8 +309,14 @@
     const settings = document.getElementById('settings');
     const layout = document.getElementById('layout');
     const measurementMode = document.getElementById('measurement-mode');
-    const horizontal = document.getElementById('horizontal');
-    const vertical = document.getElementById('vertical');
+    const pattern = document.getElementById('pattern');
+    const linePatterns = {
+      grid: { horizontal: true, vertical: true },
+      horizontal: { horizontal: true, vertical: false },
+      vertical: { horizontal: false, vertical: true },
+      'narrow-horizontal': { horizontal: true, vertical: false, skipThird: true },
+      'narrow-vertical': { horizontal: false, vertical: true, skipThird: true },
+    };
     const transparency = document.getElementById('transparency');
     const transparencyEntry = document.getElementById('transparency-entry');
     const dotsNote = document.getElementById('dots-note');
@@ -328,7 +339,7 @@
     const zoomEntry = document.getElementById('zoom-entry');
     const paperWindow = document.getElementById('paper-window');
     const paper = document.getElementById('paper');
-    const savedControls = [layout, measurementMode, horizontal, vertical,
+    const savedControls = [layout, measurementMode, pattern,
       ...dimensions.flatMap(({ dots, mm }) => [dots, mm]), transparency, zoom];
     let previousMode = measurementMode.value;
     let previewDrag = null;
@@ -338,8 +349,7 @@
     function saveSettings() {
       const values = {};
       for (const control of savedControls) {
-        if (control.type === 'checkbox') values[control.id] = control.checked;
-        else values[control.id] = control.value;
+        values[control.id] = control.value;
       }
       try {
         localStorage.setItem(storageKey, JSON.stringify(values));
@@ -352,6 +362,12 @@
       try {
         const values = JSON.parse(localStorage.getItem(storageKey));
         if (!values || typeof values !== 'object') return;
+
+        if (!Object.hasOwn(values, pattern.id)) {
+          values[pattern.id] = 'grid';
+          if (values.horizontal === false && values.vertical !== false) values[pattern.id] = 'vertical';
+          if (values.vertical === false && values.horizontal !== false) values[pattern.id] = 'horizontal';
+        }
 
         const previousTone = values['line-tone'];
         if (!Object.hasOwn(values, transparency.id)
@@ -373,9 +389,7 @@
 
         for (const control of savedControls) {
           const value = values[control.id];
-          if (control.type === 'checkbox') {
-            if (typeof value === 'boolean') control.checked = value;
-          } else if (control.type === 'select-one') {
+          if (control.type === 'select-one') {
             if (Array.from(control.options).some(option => option.value === String(value))) {
               control.value = String(value);
             }
@@ -439,7 +453,7 @@
       return value;
     }
 
-    function lineStarts(min, max, spacing, thickness, gridAligned) {
+    function lineStarts(min, max, spacing, thickness, gridAligned, skipThird = false) {
       // These coordinates are the top or left edges of the lines.
       const firstAllowed = gridAligned ? Math.ceil(min / dotPitch) * dotPitch : min;
       const count = Math.floor((max - firstAllowed - thickness) / spacing + 1e-9) + 1;
@@ -454,7 +468,8 @@
           Math.floor(lastAllowed / dotPitch) * dotPitch,
         ))
         : centered;
-      return Array.from({ length: count }, (_, index) => start + index * spacing);
+      return Array.from({ length: count }, (_, index) => start + index * spacing)
+        .filter((_, index) => !skipThird || index % 3 !== 2);
     }
 
     function render(editingEntry = null) {
@@ -482,7 +497,8 @@
         pageInsetX = Math.floor((pageUnitsWide - panelWidth * panelsAcross) / 2);
         pageInsetY = Math.floor((pageUnitsHigh - panelHeight * panelsDown) / 2);
       }
-      const isGrid = horizontal.checked && vertical.checked;
+      const { horizontal: drawHorizontal, vertical: drawVertical, skipThird } = linePatterns[pattern.value];
+      const isGrid = drawHorizontal && drawVertical;
       const segments = [];
       const rectangles = [];
 
@@ -497,14 +513,14 @@
         let top = originY + marginY;
         let right = originX + panelWidth - marginX;
         let bottom = originY + panelHeight - marginY;
-        const rows = horizontal.checked ? lineStarts(top, bottom, spacing, thickness, gridAligned) : [];
-        const columns = vertical.checked ? lineStarts(left, right, spacing, thickness, gridAligned) : [];
+        const rows = drawHorizontal ? lineStarts(top, bottom, spacing, thickness, gridAligned, skipThird) : [];
+        const columns = drawVertical ? lineStarts(left, right, spacing, thickness, gridAligned, skipThird) : [];
         if (isGrid && (rows.length < 2 || columns.length < 2)) {
           message = 'Уменьшите шаг или отступы, чтобы в каждом блоке поместилась целая клетка.';
           break;
         }
-        if ((horizontal.checked && (right <= left || !rows.length))
-          || (vertical.checked && (bottom <= top || !columns.length))) {
+        if ((drawHorizontal && (right <= left || !rows.length))
+          || (drawVertical && (bottom <= top || !columns.length))) {
           message = 'Уменьшите отступы, чтобы в каждом блоке поместились линии.';
           break;
         }
